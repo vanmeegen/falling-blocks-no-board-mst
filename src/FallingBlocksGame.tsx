@@ -3,26 +3,35 @@ import {FallingBlocksModel, Piece} from "./FallingBlocksModel";
 import {observer} from "mobx-react";
 import Timer = NodeJS.Timer;
 
-interface IFieldProps {
+function log(msg: string): void {
+    // console.log(msg);
+}
+
+// render size in pixel
+const size = 10;
+
+interface IBlockProps {
+    totalHeightPixel: number;
     color: string;
     x: number;
     y: number;
 }
 
-@observer
-export class FieldComponent extends React.Component<IFieldProps> {
-    constructor(props: IFieldProps) {
+class BlockComponent extends React.PureComponent<IBlockProps> {
+    constructor(props: IBlockProps) {
         super(props);
     }
 
     public render(): JSX.Element | null {
-        const transform = `translate(${this.props.x * 10},${300 - this.props.y * 10})`;
-        return <rect transform={transform} width={10} height={10} fill={this.props.color}/>;
+        log("rendering block with color " + this.props.color + " at (" + this.props.x + "," + this.props.y + ")");
+        const transform = `translate(${this.props.x * size},${this.props.totalHeightPixel - this.props.y * size})`;
+        return <rect transform={transform} width={size} height={size} fill={this.props.color}/>;
     }
 
 }
 
 interface IPieceProps {
+    totalHeightPixel: number;
     model: typeof Piece.Type;
 }
 
@@ -34,21 +43,20 @@ export class PieceComponent extends React.Component<IPieceProps> {
     }
 
     public render(): JSX.Element {
+        log("rendering piece " + this.props.model);
         const model = this.props.model;
-        // use relative coordinates as index
+
         return <g>
             {model.children.map(
-                b => <FieldComponent key={b.dx + 10 * b.dy} x={model.x + b.dx} y={model.y + b.dy}
-                                     color={model.color}/>)}
+                b => <BlockComponent key={b.dx + 10 * b.dy} x={model.x + b.dx} y={model.y + b.dy}
+                                     color={model.color} totalHeightPixel={this.props.totalHeightPixel}/>)}
         </g>;
     }
 }
 
-
 interface IFallingBlocksGameProps {
     model: typeof FallingBlocksModel.Type;
 }
-
 
 @observer
 export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
@@ -58,6 +66,39 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
     constructor(props: IFallingBlocksGameProps) {
         super(props);
         this.newGame = this.newGame.bind(this);
+        this.next = this.next.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);
+    }
+
+    public render(): JSX.Element {
+        log("rendering game");
+        const result: JSX.Element[] = [];
+        // use coordinates as index, this should work for quite big falling blocks games ;-)
+        const model = this.props.model;
+        model.pieces.forEach(p => {
+            result.push(<PieceComponent key={p.id} model={p} totalHeightPixel={model.height * size}/>);
+        });
+        const a = model.activePiece;
+        if (a) {
+            result.push(<PieceComponent key={a.x + 1000 * a.y} model={a} totalHeightPixel={model.height * size}/>);
+        }
+        return <div style={{margin: "10px"}}>
+            <div>
+                <button onClick={this.newGame} title="New Game">New Game</button>
+                <button onClick={this.next} title="Next">Next</button>
+                <p>Score: {model.score}</p>
+                {model.finished ? <h2>You filled blocks up to the top, Game Finished</h2> : null}
+            </div>
+            <div onKeyDown={this.onKeyDown} tabIndex={1} ref={(c) => {
+                this.mainDiv = c;
+            }} style={{outline: "none", width: "min-content", margin: "auto"}}>
+                <svg width={model.width * 10} height={model.height * 10}
+                     viewBox={`0 0 ${model.width * size} ${model.height * size}`}>
+                    <rect width={size * model.width} height={size * model.height} fill="lightcyan"/>
+                    {result}
+                </svg>
+            </div>
+        </div>;
     }
 
     private newGame(): void {
@@ -68,35 +109,13 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
         this.timeout = setInterval(() => {
             const finished = this.props.model.next();
             if (finished) {
-                clearTimeout(this.timeout);
+                log("Game finished");
+                clearInterval(this.timeout);
             }
-        }, 100);
+        }, 1000);
     }
 
-    public render(): JSX.Element {
-        const result: JSX.Element[] = [];
-        // use coordinates as index, this should work for quite big falling blocks games ;-)
-        this.props.model.pieces.forEach((p, idx) => {
-            result.push(<PieceComponent key={p.x + 1000 * p.y} model={p}/>);
-        });
-
-        return <div style={{margin: "10px"}}>
-            <div>
-                <button onClick={this.newGame} title="New Game">New Game</button>
-                <p>Score: {this.props.model.score}</p>
-                {this.props.model.finished ? <h2>You filled blocks up to the top, Game Finished</h2> : null}
-            </div>
-            <div onKeyDown={this.onKeyDown} tabIndex={1} ref={(c) => {
-                this.mainDiv = c;
-            }} style={{outline: "none"}}>
-                <svg width="600" height="600" viewBox="0 0 600 600">
-                    {result}
-                </svg>
-            </div>
-        </div>;
-    }
-
-    private onKeyDown = (evt: React.KeyboardEvent<HTMLElement>) => {
+    private onKeyDown(evt: React.KeyboardEvent<HTMLElement>): void {
         switch (evt.keyCode) {
             case 38:
                 // arrow up
@@ -115,5 +134,9 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
                 this.props.model.right();
                 break;
         }
+    }
+
+    private next(): void {
+        this.props.model.next();
     }
 }

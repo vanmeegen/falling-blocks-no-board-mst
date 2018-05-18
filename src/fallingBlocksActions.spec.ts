@@ -1,8 +1,17 @@
-import {Block, FallingBlocksModel, L_SHAPE, Piece} from "./FallingBlocksModel";
+import {Block, FallingBlocksModel, generateId, L_SHAPE, Piece} from "./FallingBlocksModel";
+
 const PIXEL = {
     children: [{dx: 0, dy: 0}],
     color: "aqua"
 };
+
+describe("The Id Generator", () => {
+    it("generates a number one higher than the last one with every call", () => {
+        const id = generateId();
+        const idplus1 = generateId();
+        expect(idplus1).toEqual(id + 1);
+    });
+});
 
 describe("The Falling Blocks Game", () => {
     let game: typeof FallingBlocksModel.Type;

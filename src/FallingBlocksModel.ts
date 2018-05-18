@@ -1,7 +1,7 @@
-import {types, detach} from "mobx-state-tree";
+import {detach, types} from "mobx-state-tree";
 
-function log(msg: string):void {
-    console.log(msg);
+function log(msg: string): void {
+    // console.log(msg);
 }
 
 // X
@@ -46,7 +46,7 @@ export const S_SHAPE = {
 // XX
 // XX
 export const BLOCK_SHAPE = {
-    children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 1, dy: 0}, {dx: 1, dy: 1}],
+    children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 0, dy: 1}, {dx: 1, dy: 1}],
     color: "yellow"
 };
 
@@ -66,7 +66,15 @@ export const Block = types.model("Block", {
     dy: types.number
 });
 
+function IdGenerator(): () => number {
+    let idCounter = 1;
+    idCounter++;
+    return () => idCounter++;
+}
+
+export const generateId = IdGenerator();
 export const Piece = types.model("Piece", {
+    id: types.optional(types.identifier(types.number), generateId()),
     x: types.number,
     y: types.number,
     color: types.string,
@@ -88,7 +96,7 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
         self.finished = false;
         self.score = 0;
         self.width = 10;
-        self.height = 27;
+        self.height = 30;
         self.pieces.clear();
         self.activePiece = Piece.create({x: 5, y: 23, ...L_SHAPE});
     },
@@ -100,7 +108,7 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
             log("falling down, y = " + nextY);
             self.activePiece.y -= 1;
         } else {
-            log(nextY === 0 ? "reached ground": "collision detected");
+            log(nextY === 0 ? "reached ground" : "collision detected");
             self.pieces.unshift(detach(self.activePiece));
             const newPiece = SHAPES[Math.floor(Math.random() * SHAPES.length)];
             self.activePiece = Piece.create({x: 5, y: 23, ...newPiece});
@@ -122,7 +130,7 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
     },
     drop: () => {
         log("dropping");
-        const maxOccupiedY = Math.max(0,...self.pieces.filter(p => p.x === self.activePiece.x).map(p => p.y));
+        const maxOccupiedY = Math.max(0, ...self.pieces.filter(p => p.x === self.activePiece.x).map(p => p.y));
         self.activePiece.y = maxOccupiedY + 1;
     },
     setActivePieceTo: (x: number, y: number) => {
