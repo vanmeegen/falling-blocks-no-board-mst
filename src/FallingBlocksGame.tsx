@@ -16,6 +16,7 @@ function log(msg: string): void {
 
 // render size in pixel
 const SIZE = 20;
+const ROUND = 3;
 
 interface IBlockProps {
     totalHeightPixel: number;
@@ -31,8 +32,9 @@ class BlockComponent extends React.PureComponent<IBlockProps> {
 
     public render(): JSX.Element | null {
         log("rendering block with color " + this.props.color + " at (" + this.props.x + "," + this.props.y + ")");
-        const transform = `translate(${this.props.x * SIZE},${this.props.totalHeightPixel - this.props.y * SIZE})`;
-        return <rect transform={transform} width={SIZE} height={SIZE} fill={this.props.color}/>;
+        const transform = `translate(${this.props.x * SIZE},${this.props.totalHeightPixel - this.props.y * SIZE })`;
+        return <rect transform={transform} width={SIZE} height={SIZE} fill={this.props.color} rx={ROUND} ry={ROUND}
+                     style={{stroke: "gray", strokeWidth: "1"}}/>;
     }
 
 }
@@ -104,7 +106,8 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
             }} style={{outline: "none", width: "min-content", margin: "auto"}}>
                 <svg width={model.width * SIZE} height={model.height * SIZE}
                      viewBox={`0 0 ${model.width * SIZE} ${model.height * SIZE}`}>
-                    <rect width={SIZE * model.width} height={SIZE * model.height} fill="lightcyan"/>
+                    <rect width={SIZE * model.width} height={SIZE * model.height}
+                          style={{fill: "lavender", stroke: "black", strokeWidth: 3}}/>
                     {result}
                 </svg>
             </div>
@@ -148,6 +151,9 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
     }
 
     private next(): void {
+        if (this.timeout) {
+            clearInterval(this.timeout);
+        }
         this.props.model.next();
     }
 }

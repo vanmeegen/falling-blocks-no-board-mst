@@ -10,7 +10,7 @@ const PIXEL = {
     children: [{dx: 0, dy: 0}],
     color: "aqua"
 };
-const HORIZONTAL_LINE = {
+const TEST_LINE = {
     children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 2, dy: 0}, {dx: 3, dy: 0}],
     color: "aqua",
     center: {dx: 1, dy: 1}
@@ -76,9 +76,9 @@ describe("The Falling Blocks Game consist of components:", () => {
 
     describe("The full line manager", () => {
         it("detects if a line is not filled", () => {
-            const piece1 = Piece.create({x: 0, y: 7, ...HORIZONTAL_LINE});
+            const piece1 = Piece.create({x: 0, y: 7, ...TEST_LINE});
             expect(lineFull(7, [piece1], 10)).toEqual(false);
-            const piece2 = Piece.create({x: 6, y: 7, ...HORIZONTAL_LINE});
+            const piece2 = Piece.create({x: 6, y: 7, ...TEST_LINE});
             const piece3 = Piece.create({x: 4, y: 7, ...PIXEL});
             expect(lineFull(7, [piece1, piece2], 10)).toEqual(false);
             // should not detect wrong line
@@ -87,11 +87,21 @@ describe("The Falling Blocks Game consist of components:", () => {
         });
 
         it("detects if a line is fully filled", () => {
-            const piece1 = Piece.create({x: 0, y: 7, ...HORIZONTAL_LINE});
-            const piece2 = Piece.create({x: 6, y: 7, ...HORIZONTAL_LINE});
+            const piece1 = Piece.create({x: 0, y: 7, ...TEST_LINE});
+            const piece2 = Piece.create({x: 6, y: 7, ...TEST_LINE});
             const piece3 = Piece.create({x: 4, y: 7, ...PIXEL});
             const piece4 = Piece.create({x: 5, y: 7, ...PIXEL});
             expect(lineFull(7, [piece1, piece2, piece3, piece4], 10)).toEqual(true);
+        });
+
+        it("detects if two lines are fully filled", () => {
+            const piece1 = Piece.create({x: 0, y: 6, ...TEST_LINE});
+            const piece2 = Piece.create({x: 6, y: 6, ...TEST_LINE});
+            const piece3 = Piece.create({x: 0, y: 7, ...TEST_LINE});
+            const piece4 = Piece.create({x: 6, y: 7, ...TEST_LINE});
+            const piece5 = Piece.create({x: 4, y: 6, ...TEST_BLOCK});
+            expect(lineFull(7, [piece1, piece2, piece3, piece4, piece5], 10)).toEqual(true);
+            expect(lineFull(6, [piece1, piece2, piece3, piece4, piece5], 10)).toEqual(true);
         });
 
         it("deletes all blocks of a line", () => {
@@ -113,8 +123,20 @@ describe("The Falling Blocks Game consist of components:", () => {
             expect(piece2.children.length).toEqual(2);
             expect(piece2.children[0].dy).toEqual(0);
             expect(piece2.children[1].dy).toEqual(1);
-
         });
+
+        it("deletes all blocks of two lines if filled", () => {
+            const piece1 = Piece.create({x: 0, y: 0, ...TEST_LINE});
+            const piece2 = Piece.create({x: 6, y: 0, ...TEST_LINE});
+            const piece3 = Piece.create({x: 0, y: 1, ...TEST_LINE});
+            const piece4 = Piece.create({x: 6, y: 1, ...TEST_LINE});
+            const piece5 = Piece.create({x: 4, y: 0, ...TEST_BLOCK});
+            const model = FallingBlocksModel.create({pieces: [piece1, piece2, piece3, piece4], activePiece: piece5});
+            model.next();
+            // all pieces should be gone now
+            expect(model.pieces.length).toEqual(0);
+        });
+
     });
 
 
@@ -131,7 +153,7 @@ describe("The Falling Blocks Game consist of components:", () => {
         }
 
         it("rotates a line by 90 degree using the second point as center", () => {
-            const rotated = rotate(Piece.create({x: 5, y: 5, ...HORIZONTAL_LINE}));
+            const rotated = rotate(Piece.create({x: 5, y: 5, ...TEST_LINE}));
             expect(rotated.children.toJSON()).toEqual([{"dx": 0, "dy": 2}, {"dx": 0, "dy": 1}, {
                 "dx": 0,
                 "dy": 0
@@ -256,8 +278,8 @@ describe("The Falling Blocks Game consist of components:", () => {
         });
 
         it("removes a line if it gets full by landed piece", () => {
-            game.addPiece(Piece.create({x: 0, y: 0, ...HORIZONTAL_LINE}));
-            game.addPiece(Piece.create({x: 6, y: 0, ...HORIZONTAL_LINE}));
+            game.addPiece(Piece.create({x: 0, y: 0, ...TEST_LINE}));
+            game.addPiece(Piece.create({x: 6, y: 0, ...TEST_LINE}));
             // L should be over x-pos 4,5
             game.drop();
             expect(game.activePiece.x).toEqual(4);

@@ -30,7 +30,7 @@ interface ShapeDefinition {
 // XX
 export const L_SHAPE = {
     children: [{dx: 0, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: 2}, {dx: 1, dy: 0}],
-    color: "orange",
+    color: "sandybrown",
     center: {dx: 0, dy: 1}
 };
 
@@ -40,7 +40,7 @@ export const L_SHAPE = {
 // XX
 export const FLIP_L_SHAPE = {
     children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 1, dy: 1}, {dx: 1, dy: 2}],
-    color: "dark-blue",
+    color: "darkblue",
     center: {dx: 1, dy: 1}
 };
 
@@ -49,7 +49,7 @@ export const FLIP_L_SHAPE = {
 // X
 export const NOSE_SHAPE = {
     children: [{dx: 0, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: 2}, {dx: 1, dy: 1}],
-    color: "purple",
+    color: "darkviolet",
     center: {dx: 0, dy: 1}
 };
 
@@ -57,7 +57,7 @@ export const NOSE_SHAPE = {
 //  XX
 export const Z_SHAPE = {
     children: [{dx: 0, dy: 1}, {dx: 1, dy: 0}, {dx: 1, dy: 1}, {dx: 2, dy: 0}],
-    color: "red",
+    color: "firebrick",
     center: {dx: 1, dy: 1}
 };
 
@@ -73,7 +73,7 @@ export const S_SHAPE = {
 // XX
 export const BLOCK_SHAPE = {
     children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 0, dy: 1}, {dx: 1, dy: 1}],
-    color: "yellow"
+    color: "gold"
 };
 
 // X
@@ -206,7 +206,7 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
         self.finished = false;
         self.score = 0;
         self.width = 10;
-        self.height = 30;
+        self.height = 27;
         self.pieces.clear();
         self.activePiece = Piece.create({x: 4, y: 23, ...L_SHAPE});
     },
@@ -235,7 +235,7 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
             if (!self.finished) {
                 // if not finished, remove full lines
                 const lines = new Set(oldPiece.children.map(b => oldPiece.y + b.dy));
-                lines.forEach(y => {
+                Array.from(lines).sort((a, b) => b - a).forEach(y => {
                     log("Checking if Line " + y + " full");
                     if (lineFull(y, self.pieces, self.width)) {
                         log("Line " + y + " will be deleted");
