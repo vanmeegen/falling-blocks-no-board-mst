@@ -45,7 +45,6 @@ interface IPieceProps {
     model: typeof Piece.Type;
 }
 
-
 @observer
 export class PieceComponent extends React.Component<IPieceProps> {
     constructor(props: IPieceProps) {
@@ -97,7 +96,7 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
         return <div style={{margin: "10px"}}>
             <div>
                 <button onClick={this.newGame} title="New Game">New Game</button>
-                <button onClick={this.next} title="Next">Next</button>
+                {/*<button onClick={this.next} title="Next">Next</button> */}
                 <p>Score: {model.score}</p>
                 {model.finished ? <h2>You filled blocks up to the top, Game Finished</h2> : null}
             </div>
@@ -130,23 +129,25 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
     }
 
     private onKeyDown(evt: React.KeyboardEvent<HTMLElement>): void {
-        switch (evt.keyCode) {
-            case 38:
-                // arrow up
-                this.props.model.rotate();
-                break;
-            case 40:
-                // arrow down
-                this.props.model.drop();
-                break;
-            case 37:
-                // arrow left
-                this.props.model.left();
-                break;
-            case 39:
-                // arrow right
-                this.props.model.right();
-                break;
+        if (!this.props.model.finished) {
+            switch (evt.keyCode) {
+                case 38:
+                    // arrow up
+                    this.props.model.rotate();
+                    break;
+                case 40:
+                    // arrow down
+                    this.props.model.drop();
+                    break;
+                case 37:
+                    // arrow left
+                    this.props.model.left();
+                    break;
+                case 39:
+                    // arrow right
+                    this.props.model.right();
+                    break;
+            }
         }
     }
 
