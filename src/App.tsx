@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) Marco van Meegen 2018.
+ * This file is protected under MIT License.
+ * Use without mention of the original author is not allowed.
+ */
+
 import * as React from "react";
 import "./App.css";
 import {FallingBlockGame} from "./FallingBlocksGame";

@@ -1,14 +1,21 @@
+/*
+ * Copyright (c) Marco van Meegen 2018.
+ * This file is protected under MIT License.
+ * Use without mention of the original author is not allowed.
+ */
+
 import * as React from "react";
 import {FallingBlocksModel, Piece} from "./FallingBlocksModel";
 import {observer} from "mobx-react";
 import Timer = NodeJS.Timer;
 
+// noinspection JSUnusedLocalSymbols
 function log(msg: string): void {
     // console.log(msg);
 }
 
 // render size in pixel
-const size = 10;
+const SIZE = 20;
 
 interface IBlockProps {
     totalHeightPixel: number;
@@ -24,14 +31,15 @@ class BlockComponent extends React.PureComponent<IBlockProps> {
 
     public render(): JSX.Element | null {
         log("rendering block with color " + this.props.color + " at (" + this.props.x + "," + this.props.y + ")");
-        const transform = `translate(${this.props.x * size},${this.props.totalHeightPixel - this.props.y * size})`;
-        return <rect transform={transform} width={size} height={size} fill={this.props.color}/>;
+        const transform = `translate(${this.props.x * SIZE},${this.props.totalHeightPixel - this.props.y * SIZE})`;
+        return <rect transform={transform} width={SIZE} height={SIZE} fill={this.props.color}/>;
     }
 
 }
 
 interface IPieceProps {
     totalHeightPixel: number;
+    widthInBlocks: number;
     model: typeof Piece.Type;
 }
 
@@ -48,7 +56,7 @@ export class PieceComponent extends React.Component<IPieceProps> {
 
         return <g>
             {model.children.map(
-                b => <BlockComponent key={b.dx + 10 * b.dy} x={model.x + b.dx} y={model.y + b.dy}
+                b => <BlockComponent key={b.dx + this.props.widthInBlocks * b.dy} x={model.x + b.dx} y={model.y + b.dy}
                                      color={model.color} totalHeightPixel={this.props.totalHeightPixel}/>)}
         </g>;
     }
@@ -76,11 +84,13 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
         // use coordinates as index, this should work for quite big falling blocks games ;-)
         const model = this.props.model;
         model.pieces.forEach(p => {
-            result.push(<PieceComponent key={p.id} model={p} totalHeightPixel={(model.height - 1) * size}/>);
+            result.push(<PieceComponent key={p.id} model={p} widthInBlocks={this.props.model.width}
+                                        totalHeightPixel={(model.height - 1) * SIZE}/>);
         });
         const a = model.activePiece;
         if (a) {
-            result.push(<PieceComponent key={a.id} model={a} totalHeightPixel={(model.height - 1) * size}/>);
+            result.push(<PieceComponent key={a.id} model={a} widthInBlocks={this.props.model.width}
+                                        totalHeightPixel={(model.height - 1) * SIZE}/>);
         }
         return <div style={{margin: "10px"}}>
             <div>
@@ -92,9 +102,9 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
             <div onKeyDown={this.onKeyDown} tabIndex={1} ref={(c) => {
                 this.mainDiv = c;
             }} style={{outline: "none", width: "min-content", margin: "auto"}}>
-                <svg width={model.width * 10} height={model.height * 10}
-                     viewBox={`0 0 ${model.width * size} ${model.height * size}`}>
-                    <rect width={size * model.width} height={size * model.height} fill="lightcyan"/>
+                <svg width={model.width * SIZE} height={model.height * SIZE}
+                     viewBox={`0 0 ${model.width * SIZE} ${model.height * SIZE}`}>
+                    <rect width={SIZE * model.width} height={SIZE * model.height} fill="lightcyan"/>
                     {result}
                 </svg>
             </div>
