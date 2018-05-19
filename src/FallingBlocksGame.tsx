@@ -120,7 +120,7 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
         switch (evt.keyCode) {
             case 38:
                 // arrow up
-                // TODO: this.props.model.rotate();
+                this.props.model.rotate();
                 break;
             case 40:
                 // arrow down
