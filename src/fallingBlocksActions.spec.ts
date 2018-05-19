@@ -6,7 +6,8 @@ const PIXEL = {
 };
 const HORIZONTAL_LINE = {
     children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 2, dy: 0}, {dx: 3, dy: 0}],
-    color: "aqua"
+    color: "aqua",
+    center: {dx: 1, dy: 1}
 };
 
 // X
@@ -17,6 +18,12 @@ export const TEST_L = {
     color: "orange"
 };
 
+// XX
+// XX
+export const TEST_BLOCK = {
+    children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 0, dy: 1}, {dx: 1, dy: 1}],
+    color: "yellow"
+};
 
 describe("The Falling Blocks Game consist of components:", () => {
     describe("The Id Generator", () => {
@@ -97,43 +104,30 @@ describe("The Falling Blocks Game consist of components:", () => {
 
     });
 
+
     describe("The rotate function", () => {
-        it("rotates a line by 90 degree", () => {
-            const piece1 = Piece.create({x: 0, y: 0, ...HORIZONTAL_LINE});
-            const model = FallingBlocksModel.create({activePiece: piece1});
+        /**
+         * embed piece in model to rotate it
+         * @param piece
+         * @return rotated piece
+         */
+        function rotate(piece: typeof Piece.Type): typeof Piece.Type {
+            const model = FallingBlocksModel.create({activePiece: piece});
             model.rotate();
-            expect(piece1.children[0].dx).toEqual(0);
-            expect(piece1.children[0].dy).toEqual(0);
+            return model.activePiece;
+        }
+
+        it("rotates a line by 90 degree using the second point as center", () => {
+            const rotated = rotate(Piece.create({x: 0, y: 0, ...HORIZONTAL_LINE}));
+            expect(rotated.children.toJSON()).toEqual([{"dx": 0, "dy": 2}, {"dx": 0, "dy": 1}, {
+                "dx": 0,
+                "dy": 0
+            }, {"dx": 0, "dy": -1}]);
         });
 
-        it("detects if a line is fully filled", () => {
-            const piece1 = Piece.create({x: 0, y: 7, ...HORIZONTAL_LINE});
-            const piece2 = Piece.create({x: 6, y: 7, ...HORIZONTAL_LINE});
-            const piece3 = Piece.create({x: 4, y: 7, ...PIXEL});
-            const piece4 = Piece.create({x: 5, y: 7, ...PIXEL});
-            expect(lineFull(7, [piece1, piece2, piece3, piece4])).toEqual(true);
-        });
-
-        it("deletes all blocks of a line", () => {
-            // two Ls
-            //   x
-            // x x         x
-            // x xx  --> x x
-            // xx        xx
-            const piece1 = Piece.create({x: 0, y: 0, ...TEST_L});
-            const piece2 = Piece.create({x: 2, y: 1, ...TEST_L});
-            const model = FallingBlocksModel.create({pieces: [piece1, piece2]});
-            model.deleteLine(1);
-
-            expect(piece1.children.length).toEqual(3);
-            expect(piece1.children[0].dy).toEqual(0);
-            expect(piece1.children[1].dy).toEqual(1);
-            expect(piece1.children[2].dy).toEqual(0);
-
-            expect(piece2.children.length).toEqual(2);
-            expect(piece2.children[0].dy).toEqual(0);
-            expect(piece2.children[1].dy).toEqual(1);
-
+        it("does not rotate a piece with no center specified", () => {
+            const rotated = rotate(Piece.create({x: 0, y: 0, ...TEST_BLOCK}));
+            expect(rotated.children.toJSON()).toEqual(TEST_BLOCK.children);
         });
 
     });

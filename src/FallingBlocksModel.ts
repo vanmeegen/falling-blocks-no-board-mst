@@ -9,7 +9,8 @@ function log(msg: string): void {
 // XX
 export const L_SHAPE = {
     children: [{dx: 0, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: 2}, {dx: 1, dy: 0}],
-    color: "orange"
+    color: "orange",
+    center: {dx: 0, dy: 1}
 };
 
 
@@ -18,7 +19,8 @@ export const L_SHAPE = {
 // XX
 export const FLIP_L_SHAPE = {
     children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 1, dy: 1}, {dx: 1, dy: 2}],
-    color: "dark-blue"
+    color: "dark-blue",
+    center: {dx: 1, dy: 1}
 };
 
 // X
@@ -26,21 +28,24 @@ export const FLIP_L_SHAPE = {
 // X
 export const NOSE_SHAPE = {
     children: [{dx: 0, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: 2}, {dx: 1, dy: 1}],
-    color: "purple"
+    color: "purple",
+    center: {dx: 0, dy: 1}
 };
 
 // XX
 //  XX
 export const Z_SHAPE = {
     children: [{dx: 0, dy: 1}, {dx: 1, dy: 0}, {dx: 1, dy: 1}, {dx: 2, dy: 0}],
-    color: "red"
+    color: "red",
+    center: {dx: 1, dy: 1}
 };
 
 //  XX
 // XX
 export const S_SHAPE = {
     children: [{dx: 0, dy: 0}, {dx: 1, dy: 0}, {dx: 1, dy: 1}, {dx: 2, dy: 1}],
-    color: "green"
+    color: "green",
+    center: {dx: 1, dy: 1}
 };
 
 // XX
@@ -85,6 +90,8 @@ export const Piece = types.model("Piece", {
     x: types.number,
     y: types.number,
     color: types.string,
+    /** center of rotation; if undefined, no rotation is done */
+    center: types.maybe(Block),
     children: types.optional(types.array(Block), [])
 });
 
@@ -124,11 +131,15 @@ function multiplyMatrices(m1: number[][], m2: number[][]): number[][] {
 const Degree90Matrix = [[0, 1], [-1, 0]];
 
 export function rotate(piece: typeof Piece.Type): void {
-    piece.children.forEach(c => {
-        const rotated = multiplyMatrices(Degree90Matrix, [[c.dx], [c.dy]]);
-        c.dx = rotated[0][0];
-        c.dy = rotated[1][0];
-    });
+    // only rotate if center is specified, special case needed for blocks having a fractional center
+    if (piece.center) {
+        // translate center to (0,0), rotate, and then translate back
+        piece.children.forEach(c => {
+            const rotated = multiplyMatrices(Degree90Matrix, [[c.dx - piece.center.dx], [c.dy - piece.center.dy]]);
+            c.dx = rotated[0][0] + piece.center.dx;
+            c.dy = rotated[1][0] + piece.center.dy;
+        });
+    }
 }
 
 export const FallingBlocksModel = types.model("FallingBlocksModel", {
@@ -219,7 +230,6 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
      * adjusts all pieces that blocks on the line are removed and blocks above fall down 1 line
      * pieces without blocks will be removed too.
      * @param {number} y
-     * @param {typeof Piece.Type[]} pieces will be adjusted inplace, side effects !!!, pieces might be removed
      */
     deleteLine: (y: number) => {
         const pieces = self.pieces;
@@ -251,7 +261,5 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
     rotate: () => {
         rotate(self.activePiece);
     }
-})).views((self) => ({
-    /** return all block in absolute coordinates */
 }));
 
