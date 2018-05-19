@@ -1,4 +1,4 @@
-import {detach, types} from "mobx-state-tree";
+import {detach, getSnapshot, types} from "mobx-state-tree";
 
 function log(msg: string): void {
     // console.log(msg);
@@ -61,6 +61,11 @@ export const LINE_SHAPE = {
 
 const SHAPES = [L_SHAPE, FLIP_L_SHAPE, NOSE_SHAPE, Z_SHAPE, S_SHAPE, BLOCK_SHAPE, LINE_SHAPE];
 
+type Point = {
+    x: number;
+    y: number;
+};
+
 export const Block = types.model("Block", {
     dx: types.number,
     dy: types.number
@@ -68,18 +73,38 @@ export const Block = types.model("Block", {
 
 function IdGenerator(): () => number {
     let idCounter = 1;
-    idCounter++;
-    return () => idCounter++;
+    return () => {
+        idCounter = idCounter + 1;
+        return idCounter;
+    };
 }
 
 export const generateId = IdGenerator();
 export const Piece = types.model("Piece", {
-    id: types.optional(types.identifier(types.number), generateId()),
+    id: types.optional(types.identifier(types.number), generateId),
     x: types.number,
     y: types.number,
     color: types.string,
     children: types.optional(types.array(Block), [])
 });
+
+export function points(...pieces: typeof Piece.Type[]): Point[] {
+    const result: Point[] = [];
+    pieces.forEach(p => result.push(...p.children.map(b => ({x: p.x + b.dx, y: p.y + b.dy}))));
+    return result;
+}
+
+export function collides(activePiece: typeof Piece.Type, pieces: typeof Piece.Type[]): boolean {
+    const targetPoints = points(...pieces);
+    return points(activePiece).reduce((acc, testPoint) => acc + targetPoints.filter(p => p.y === testPoint.y && p.x === testPoint.x).length, 0) !== 0;
+}
+
+export function lineFull(y: number, pieces: typeof Piece.Type[]): boolean {
+    const points1 = points(...pieces);
+    const targetPoints = points1.filter(p => p.y === y).map(p => p.x);
+    const setOfX = new Set(targetPoints);
+    return setOfX.size === 10;
+}
 
 
 export const FallingBlocksModel = types.model("FallingBlocksModel", {
@@ -103,34 +128,60 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
     next: () => {
         log("calculating next state");
         const nextY = self.activePiece.y - 1;
+        // guess there is a more elegant solution to create a modified piece ?
+        const nextPiecePosition = Piece.create({...getSnapshot(self.activePiece), y: nextY});
+
         // border reached or collision with other piece --> push it to list of static pieces and create new active piece
-        if (nextY > 0 && self.pieces.filter(p => p.y === nextY && p.x === self.activePiece.x).length === 0) {
+        const collision = collides(nextPiecePosition, self.pieces);
+        if (nextY > 0 && !collision) {
             log("falling down, y = " + nextY);
             self.activePiece.y -= 1;
         } else {
+            if (!collision) {
+                self.activePiece.y -= 1;
+            }
             log(nextY === 0 ? "reached ground" : "collision detected");
-            self.pieces.unshift(detach(self.activePiece));
+            const oldPiece = detach(self.activePiece);
+            self.pieces.unshift(oldPiece);
             const newPiece = SHAPES[Math.floor(Math.random() * SHAPES.length)];
             self.activePiece = Piece.create({x: 5, y: 23, ...newPiece});
+            self.score += 10;
             log("created new piece at " + self.activePiece.x + ", " + self.activePiece.y);
             log("now there are " + self.pieces.length + " inactive pieces");
             // if newly created piece collides, game is finished
-            self.finished = self.pieces.filter(p => p.y === self.activePiece.y && p.x === self.activePiece.x).length !== 0;
-            self.finished && log("Game is finished");
+            self.finished = collides(self.activePiece, self.pieces);
+            if (!self.finished) {
+                const lines = new Set(oldPiece.children.map(b => oldPiece.y + b.dy));
+                lines.forEach(y => {
+                    if (lineFull(y, self.pieces)) {
+                        log("Line " + y + " will be deleted");
+                        (self as any).deleteLine(y);
+                    }
+                });
+            } else {
+                log("Game is finished");
+            }
         }
         return self.finished;
     },
     left: () => {
         log("moving left");
-        self.activePiece.x = Math.max(0, self.activePiece.x - 1);
+        if (Math.min(...points(self.activePiece).map(p => p.x)) > 0) {
+            self.activePiece.x -= 1;
+        }
     },
     right: () => {
         log("moving right");
-        self.activePiece.x = Math.min(9, self.activePiece.x + 1);
+        if (Math.max(...points(self.activePiece).map(p => p.x)) < 9) {
+            self.activePiece.x += 1;
+        }
     },
     drop: () => {
         log("dropping");
-        const maxOccupiedY = Math.max(0, ...self.pieces.filter(p => p.x === self.activePiece.x).map(p => p.y));
+        const pointsToCheck: Point[] = points(...self.pieces);
+        const reducer = (acc: number[], ap: Point) => pointsToCheck.filter(p => p.x === ap.x).map(p => p.y).concat(acc);
+        const yCoordinates = points(self.activePiece).reduce(reducer, [] as number[]);
+        const maxOccupiedY = Math.max(0, ...yCoordinates);
         self.activePiece.y = maxOccupiedY + 1;
     },
     setActivePieceTo: (x: number, y: number) => {
@@ -139,6 +190,41 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
     },
     addPiece: (p: typeof Piece.Type) => {
         self.pieces.push(p);
+    },
+    /**
+     * adjusts all pieces that blocks on the line are removed and blocks above fall down 1 line
+     * pieces without blocks will be removed too.
+     * @param {number} y
+     * @param {typeof Piece.Type[]} pieces will be adjusted inplace, side effects !!!, pieces might be removed
+     */
+    deleteLine: (y: number) => {
+        const pieces = self.pieces;
+        let i = 0;
+        while (i < pieces.length) {
+            let j = 0;
+            const p = pieces[i];
+            while (j < p.children.length) {
+                const c = p.children[j];
+                if (p.y + c.dy === y) {
+                    // remove piece if on line
+                    p.children.splice(j, 1);
+                } else {
+                    if (p.y + c.dy > y) {
+                        // fall down
+                        c.dy -= 1;
+                    }
+                    j++;
+                }
+            }
+            // if piece has no blocks left, remove it
+            if (pieces[i].children.length === 0) {
+                pieces.splice(i, 1);
+            } else {
+                i++;
+            }
+        }
     }
+})).views((self) => ({
+    /** return all block in absolute coordinates */
 }));
 

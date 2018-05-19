@@ -76,11 +76,11 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
         // use coordinates as index, this should work for quite big falling blocks games ;-)
         const model = this.props.model;
         model.pieces.forEach(p => {
-            result.push(<PieceComponent key={p.id} model={p} totalHeightPixel={model.height * size}/>);
+            result.push(<PieceComponent key={p.id} model={p} totalHeightPixel={(model.height - 1) * size}/>);
         });
         const a = model.activePiece;
         if (a) {
-            result.push(<PieceComponent key={a.x + 1000 * a.y} model={a} totalHeightPixel={model.height * size}/>);
+            result.push(<PieceComponent key={a.id} model={a} totalHeightPixel={(model.height - 1) * size}/>);
         }
         return <div style={{margin: "10px"}}>
             <div>
@@ -103,6 +103,7 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
 
     private newGame(): void {
         this.props.model.start();
+        this.forceUpdate();
         if (this.mainDiv !== null) {
             this.mainDiv.focus();
         }
@@ -112,7 +113,7 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
                 log("Game finished");
                 clearInterval(this.timeout);
             }
-        }, 1000);
+        }, 300);
     }
 
     private onKeyDown(evt: React.KeyboardEvent<HTMLElement>): void {
