@@ -4,11 +4,11 @@
  * Use without mention of the original author is not allowed.
  */
 
-import {detach, types} from "mobx-state-tree";
+import {detach, Instance, types} from "mobx-state-tree";
 
 // noinspection JSUnusedLocalSymbols
 function log(msg: string): void {
-    // console.log(msg);
+    console.log(msg);
 }
 
 /**
@@ -106,15 +106,16 @@ function IdGenerator(): () => number {
     };
 }
 
-export const generateId = IdGenerator();
+const genNumericId = IdGenerator();
+export const generateId = () => "" + genNumericId();
 export const Piece = types.model("Piece", {
-    id: types.optional(types.identifier(types.number), generateId),
+    id: types.optional(types.identifier, generateId),
     x: types.number,
     y: types.number,
     color: types.string,
     /** center of rotation; if undefined, no rotation is done */
     center: types.maybe(Block),
-    children: types.optional(types.array(Block), [])
+    children: types.array(Block)
 });
 
 export function points(...pieces: typeof Piece.Type[]): Point[] {
@@ -180,14 +181,14 @@ function multiplyMatrices(m1: number[][], m2: number[][]): number[][] {
 
 const Degree90Matrix = [[0, 1], [-1, 0]];
 
-export function rotate(piece: typeof Piece.Type): void {
+export function rotate(piece: Instance<typeof Piece>): void {
     // only rotate if center is specified, special case needed for blocks having a fractional center
-    if (piece.center) {
+    if (piece.center !== undefined) {
         // translate center to (0,0), rotate, and then translate back
         piece.children.forEach(c => {
-            const rotated = multiplyMatrices(Degree90Matrix, [[c.dx - piece.center.dx], [c.dy - piece.center.dy]]);
-            c.dx = rotated[0][0] + piece.center.dx;
-            c.dy = rotated[1][0] + piece.center.dy;
+            const rotated = multiplyMatrices(Degree90Matrix, [[c.dx - piece.center!.dx], [c.dy - piece.center!.dy]]);
+            c.dx = rotated[0][0] + piece.center!.dx;
+            c.dy = rotated[1][0] + piece.center!.dy;
         });
     }
 }
@@ -198,7 +199,7 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
     width: types.optional(types.number, 10),
     height: types.optional(types.number, 20),
     /** array of indices which snake occupies; head is last entry */
-    pieces: types.optional(types.array(Piece), []),
+    pieces: types.array(Piece),
     activePiece: types.maybe(Piece)
 }).actions((self) => ({
     start: () => {
@@ -208,19 +209,19 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
         self.width = 10;
         self.height = 27;
         self.pieces.clear();
-        self.activePiece = Piece.create({x: 4, y: 23, ...L_SHAPE});
+        self.activePiece = Piece.create({id: "0", x: 4, y: 23, ...L_SHAPE});
     },
     next: () => {
         log("calculating next state");
-        self.activePiece.y -= 1;
+        self.activePiece!.y -= 1;
         // border reached or collision with other piece --> push it to list of static pieces and create new active piece
-        const collision = collides(self.activePiece, self.pieces, self.width);
+        const collision = collides(self.activePiece!, self.pieces, self.width);
         if (collision) {
             // undo move
-            self.activePiece.y += 1;
+            self.activePiece!.y += 1;
 
             // put active piece on inactive pieces list
-            const oldPiece = detach(self.activePiece);
+            const oldPiece = detach(self.activePiece!);
             self.pieces.unshift(oldPiece);
             // create new random piece
             const newPiece: ShapeDefinition = SHAPES[Math.floor(Math.random() * SHAPES.length)];
@@ -250,40 +251,40 @@ export const FallingBlocksModel = types.model("FallingBlocksModel", {
     },
     left: () => {
         log("moving left");
-        self.activePiece.x -= 1;
-        if (collides(self.activePiece, self.pieces, self.width)) {
-            self.activePiece.x += 1;
+        self.activePiece!.x -= 1;
+        if (collides(self.activePiece!, self.pieces, self.width)) {
+            self.activePiece!.x += 1;
         }
     },
     right: () => {
         log("moving right");
-        self.activePiece.x += 1;
-        if (collides(self.activePiece, self.pieces, self.width)) {
-            self.activePiece.x -= 1;
+        self.activePiece!.x += 1;
+        if (collides(self.activePiece!, self.pieces, self.width)) {
+            self.activePiece!.x -= 1;
         }
     },
     rotate: () => {
-        rotate(self.activePiece);
-        if (collides(self.activePiece, self.pieces, self.width)) {
+        rotate(self.activePiece!);
+        if (collides(self.activePiece!, self.pieces, self.width)) {
             // take rotation back by rotating 3 times
-            [1, 2, 3].forEach(() => rotate(self.activePiece));
+            [1, 2, 3].forEach(() => rotate(self.activePiece!));
         }
     },
     drop: () => {
         // border reached or collision with other piece --> push it to list of static pieces and create new active piece
         let dropped = false;
-        while (!collides(self.activePiece, self.pieces, self.width)) {
-            self.activePiece.y -= 1;
+        while (!collides(self.activePiece!, self.pieces, self.width)) {
+            self.activePiece!.y -= 1;
             dropped = true;
         }
         // undo move which led to collision
         if (dropped) {
-            self.activePiece.y += 1;
+            self.activePiece!.y += 1;
         }
     },
     setActivePieceTo: (x: number, y: number) => {
-        self.activePiece.x = x;
-        self.activePiece.y = y;
+        self.activePiece!.x = x;
+        self.activePiece!.y = y;
     },
     addPiece: (p: typeof Piece.Type) => {
         self.pieces.push(p);

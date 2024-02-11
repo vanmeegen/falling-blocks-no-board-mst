@@ -1,26 +1,32 @@
 {
   "name": "falling-blocks-no-board-mst",
-  "version": "0.5.0",
+  "version": "0.8.0",
   "private": true,
-  "dependencies": {
-    "mobx": "4",
-    "mobx-react": "^5.1.2",
-    "mobx-state-tree": "^2.0.5",
-    "react": "^16.3.2",
-    "react-dom": "^16.3.2",
-    "react-scripts-ts": "2.15.1"
-  },
+  "type": "module",
   "scripts": {
-    "start": "react-scripts-ts start",
-    "build": "react-scripts-ts build",
-    "test": "react-scripts-ts test --env=jsdom",
-    "eject": "react-scripts-ts eject"
+    "dev": "vite",
+    "test": "tsc && vitest run",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "@types/jest": "^22.2.3",
-    "@types/node": "^10.0.8",
-    "@types/react": "^16.3.14",
-    "@types/react-dom": "^16.0.5",
-    "typescript": "^2.8.3"
-  }
+    "@babel/plugin-proposal-decorators": "^7.23.9",
+    "@babel/plugin-syntax-decorators": "^7.23.3",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.0",
+    "vite-plugin-babel": "^1.2.0",
+    "vitest": "^1.2.2"
+  },
+  "dependencies": {
+    "mobx": "^6.12.0",
+    "mobx-react": "^9.1.0",
+    "mobx-state-tree": "^5.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "packageManager": "yarn@4.1.0"
 }

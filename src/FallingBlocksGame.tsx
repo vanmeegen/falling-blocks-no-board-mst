@@ -7,11 +7,12 @@
 import * as React from "react";
 import {FallingBlocksModel, Piece} from "./FallingBlocksModel";
 import {observer} from "mobx-react";
-import Timer = NodeJS.Timer;
+import {ReactNode} from "react";
+import {Instance} from "mobx-state-tree";
 
 // noinspection JSUnusedLocalSymbols
 function log(msg: string): void {
-    // console.log(msg);
+    console.log(msg);
 }
 
 // render size in pixel
@@ -64,13 +65,13 @@ export class PieceComponent extends React.Component<IPieceProps> {
 }
 
 interface IFallingBlocksGameProps {
-    model: typeof FallingBlocksModel.Type;
+    model: Instance<typeof FallingBlocksModel>;
 }
 
 @observer
 export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
-    private timeout: Timer;
-    private mainDiv: HTMLDivElement | null;
+    private timeout: number|undefined;
+    private mainDiv: HTMLDivElement | null = null;
 
     constructor(props: IFallingBlocksGameProps) {
         super(props);
@@ -79,7 +80,7 @@ export class FallingBlockGame extends React.Component<IFallingBlocksGameProps> {
         this.onKeyDown = this.onKeyDown.bind(this);
     }
 
-    public render(): JSX.Element {
+    public render(): ReactNode {
         log("rendering game");
         const result: JSX.Element[] = [];
         // use coordinates as index, this should work for quite big falling blocks games ;-)

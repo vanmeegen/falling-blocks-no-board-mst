@@ -5,6 +5,7 @@
  */
 
 import {Block, collidesWithPiece, FallingBlocksModel, generateId, L_SHAPE, lineFull, Piece} from "./FallingBlocksModel";
+import {Instance} from "mobx-state-tree";
 
 const PIXEL = {
     children: [{dx: 0, dy: 0}],
@@ -33,7 +34,7 @@ export const TEST_BLOCK = {
 };
 
 describe("The Falling Blocks Game consist of components:", () => {
-    let game: typeof FallingBlocksModel.Type;
+    let game: Instance<typeof FallingBlocksModel>;
     beforeEach(() => {
         game = FallingBlocksModel.create();
         game.start();
@@ -44,9 +45,9 @@ describe("The Falling Blocks Game consist of components:", () => {
         it("generates a number one higher than the last one with every call", () => {
             const id = generateId();
             const idplus1 = generateId();
-            expect(idplus1).toEqual(id + 1);
+            expect(idplus1).toEqual("" + (Number.parseInt(id) + 1));
             const idplus2 = generateId();
-            expect(idplus2).toEqual(id + 2);
+            expect(idplus2).toEqual("" + (Number.parseInt(id) + 2));
         });
 
         it("will give two created pieces a different id", () => {
@@ -146,10 +147,10 @@ describe("The Falling Blocks Game consist of components:", () => {
          * @param piece
          * @return rotated piece
          */
-        function rotate(piece: typeof Piece.Type): typeof Piece.Type {
+        function rotate(piece: Instance<typeof Piece>):  Instance<typeof Piece> {
             const model = FallingBlocksModel.create({activePiece: piece});
             model.rotate();
-            return model.activePiece;
+            return model.activePiece!;
         }
 
         it("rotates a line by 90 degree using the second point as center", () => {
@@ -179,101 +180,102 @@ describe("The Falling Blocks Game consist of components:", () => {
         });
 
         it("places an active piece on the top row on start", () => {
-            expect(game.activePiece.x).toEqual(4);
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.x).toEqual(4);
+            expect(game.activePiece!.y).toEqual(23);
         });
         it("places a new piece on the board if the active piece reaches the bottom line", () => {
-            game.setActivePieceTo(game.activePiece.x, 0);
+            game.setActivePieceTo(game.activePiece!.x, 0);
             game.next();
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.y).toEqual(23);
             expect(game.pieces.length).toEqual(1);
         });
 
         it("piece drops down at each turn", () => {
             game.next();
-            expect(game.activePiece.x).toEqual(4);
-            expect(game.activePiece.y).toEqual(22);
+            expect(game.activePiece!.x).toEqual(4);
+            expect(game.activePiece!.y).toEqual(22);
             game.next();
-            expect(game.activePiece.x).toEqual(4);
-            expect(game.activePiece.y).toEqual(21);
+            expect(game.activePiece!.x).toEqual(4);
+            expect(game.activePiece!.y).toEqual(21);
             expect(game.pieces.length).toEqual(0);
         });
 
         it("moves the piece left", () => {
             game.left();
-            expect(game.activePiece.x).toEqual(3);
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.x).toEqual(3);
+            expect(game.activePiece!.y).toEqual(23);
         });
 
         it("moves the piece left if border is a pixel away", () => {
-            game.setActivePieceTo(1, game.activePiece.y);
+            game.setActivePieceTo(1,game.activePiece!.y);
             game.left();
-            expect(game.activePiece.x).toEqual(0);
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.x).toEqual(0);
+            expect(game.activePiece!.y).toEqual(23);
         });
 
         it("does not move the piece left if border is reached", () => {
-            game.setActivePieceTo(0, game.activePiece.y);
+            game.setActivePieceTo(0, game.activePiece!.y);
             game.left();
-            expect(game.activePiece.x).toEqual(0);
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.x).toEqual(0);
+            expect(game.activePiece!.y).toEqual(23);
         });
 
         it("moves the piece right", () => {
             game.right();
-            expect(game.activePiece.x).toEqual(5);
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.x).toEqual(5);
+            expect(game.activePiece!.y).toEqual(23);
         });
 
         it("does not move the piece right if border is reached", () => {
-            game.setActivePieceTo(9, game.activePiece.y);
+            game.setActivePieceTo(9, game.activePiece!.y);
             game.right();
-            expect(game.activePiece.x).toEqual(9);
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.x).toEqual(9);
+            expect(game.activePiece!.y).toEqual(23);
         });
 
         it("does not move the piece right if border is reached by a block", () => {
-            game.setActivePieceTo(8, game.activePiece.y);
+            game.setActivePieceTo(8, game.activePiece!.y);
             game.right();
-            expect(game.activePiece.x).toEqual(8);
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.x).toEqual(8);
+            expect(game.activePiece!.y).toEqual(23);
         });
 
         it("creates a new piece if the falling piece collidesWithPiece with another one", () => {
-            game.setActivePieceTo(game.activePiece.x, 6);
+            // Test seems unstable, check why
+            game.setActivePieceTo(game.activePiece!.x, 6);
             game.addPiece(Piece.create({x: 5, y: 5, ...PIXEL}));
             game.next();
-            expect(game.activePiece.x).toEqual(5);
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.x).toEqual(5);
+            expect(game.activePiece!.y).toEqual(23);
             expect(game.pieces.length).toEqual(2);
         });
         it("drops down just before the bottom and at the next step it will stop", () => {
             game.drop();
-            expect(game.activePiece.x).toEqual(4);
-            expect(game.activePiece.y).toEqual(0);
+            expect(game.activePiece!.x).toEqual(4);
+            expect(game.activePiece!.y).toEqual(0);
             game.next();
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.y).toEqual(23);
         });
 
         it("drops only to the uppermost occupied field beneath it", () => {
             game.addPiece(Piece.create({x: 5, y: 5, ...PIXEL}));
             game.drop();
-            expect(game.activePiece.x).toEqual(4);
-            expect(game.activePiece.y).toEqual(6);
+            expect(game.activePiece!.x).toEqual(4);
+            expect(game.activePiece!.y).toEqual(6);
             // active piece should stop after next move
             game.next();
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.y).toEqual(23);
             expect(game.pieces.length).toEqual(2);
         });
 
         it("drops only to the uppermost occupied field beneath it, this works for all pixels", () => {
             game.addPiece(Piece.create({x: 5, y: 5, ...PIXEL}));
             game.drop();
-            expect(game.activePiece.x).toEqual(4);
-            expect(game.activePiece.y).toEqual(6);
+            expect(game.activePiece!.x).toEqual(4);
+            expect(game.activePiece!.y).toEqual(6);
             // active piece should stop after next move
             game.next();
-            expect(game.activePiece.y).toEqual(23);
+            expect(game.activePiece!.y).toEqual(23);
             expect(game.pieces.length).toEqual(2);
         });
 
@@ -282,8 +284,8 @@ describe("The Falling Blocks Game consist of components:", () => {
             game.addPiece(Piece.create({x: 6, y: 0, ...TEST_LINE}));
             // L should be over x-pos 4,5
             game.drop();
-            expect(game.activePiece.x).toEqual(4);
-            expect(game.activePiece.y).toEqual(0);
+            expect(game.activePiece!.x).toEqual(4);
+            expect(game.activePiece!.y).toEqual(0);
             // active piece should stop after next move and line should be killed
             game.next();
             expect(game.pieces.length).toEqual(1);
@@ -294,7 +296,7 @@ describe("The Falling Blocks Game consist of components:", () => {
             game.addPiece(Piece.create({x: 5, y: 24, ...PIXEL}));
             game.rotate();
             // should not have rotated
-            expect(game.activePiece.children.toJSON()).toEqual(L_SHAPE.children);
+            expect(game.activePiece!.children.toJSON()).toEqual(L_SHAPE.children);
         });
 
         it("only rotates piece if rotated piece would not collide with border", () => {
@@ -302,7 +304,7 @@ describe("The Falling Blocks Game consist of components:", () => {
             game.setActivePieceTo(0, 23);
             game.rotate();
             // should not have rotated
-            expect(game.activePiece.children.toJSON()).toEqual(L_SHAPE.children);
+            expect(game.activePiece!.children.toJSON()).toEqual(L_SHAPE.children);
 
         });
 

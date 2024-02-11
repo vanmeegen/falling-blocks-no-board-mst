@@ -4,7 +4,6 @@
  * Use without mention of the original author is not allowed.
  */
 
-import * as React from "react";
 import * as ReactDOM from "react-dom";
 import App from "./App";
 import "./index.css";
